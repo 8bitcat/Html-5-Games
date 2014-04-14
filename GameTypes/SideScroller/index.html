@@ -1,0 +1,221 @@
+<body>
+<canvas id="gameWindow" width="600" height="400" tabindex="1"
+style="position:absolute;top:0;left:0;background-image:url('IMAGES/background.png');"</canvas>
+
+<script>
+
+// Properties _____________________________________________
+var gameCanvas = document.getElementById("gameWindow");
+var grafx = gameCanvas.getContext('2d');
+var fps = 60;
+var interval = 1000 / fps;
+var counter = 0;
+var maxBlock = 25;
+var block = new Array();
+var player = new GameObject("IMAGES/uRight.png",300,100,32,44);
+var sndJump = new Audio("AUDIO/Jump.mp3");
+var titleTheme = new Audio("AUDIO/tmnt.mp3");
+for(var i = 0; i < maxBlock; i++) {
+	block[i] = new GameObject("IMAGES/block.png",i * 25 + 100,300,25,25);
+}
+
+var rootContext = "file:///C:/Users/Drhugo/Desktop/Programmering/Egna%20sidor/Javascript%20Game%20Engine/IMAGES/";
+var isLeft = false;
+var isRight = false;
+var isSpace = false;
+player.Gravity = 20;
+player.Weight = 0.1;
+
+
+
+//Setup!
+gameCanvas.focus();
+titleTheme.play();
+
+
+// Events _________________________________________________ 
+// BIND TITLE THEME ENDED
+titleTheme.addEventListener('ended',endings);
+function endings()
+{
+ titleTheme.play();
+}
+
+
+// BIND ONKEYDOWN
+gameCanvas.onkeyup = function(evt)
+{
+	evt = evt || window.event;
+	// Object keyCode Values
+	// 32 --> SPACE
+	// 37 --> LEFT
+	// 38 --> UP
+	// 39 --> RIGHT
+	// 40 --> DOWN 
+	
+	if(evt.keyCode == 32) isSpace = false;
+	if(evt.keyCode == 37) isLeft = false;
+	if(evt.keyCode == 39) isRight = false;
+};
+
+gameCanvas.onkeydown = function(evt)
+{
+	evt = evt || window.event;
+	// Object keyCode Values
+	// 32 --> SPACE
+	// 37 --> LEFT
+	// 38 --> UP
+	// 39 --> RIGHT
+	// 40 --> DOWN 
+	if(evt.keyCode == 32) isSpace = true;
+	if(evt.keyCode == 37) isLeft = true;
+	if(evt.keyCode == 39) isRight = true;
+};
+
+function AnimatePlayer(velocity)
+{
+			if(velocity == 37)
+			{
+				if(player.Sprite.src == rootContext + "IMAGES/uLeft.png")
+				{	
+					player.Sprite.src = "IMAGES/uLeft_Run.png";	
+				}
+				else if(player.Sprite.src == rootContext + "IMAGES/uLeft_Run.png")
+				{
+					player.Sprite.src = "IMAGES/uLeft.png"
+				}
+				else if(player.Sprite.src == rootContext + "IMAGES/uRight.png" || player.Sprite.src == rootContext + "IMAGES/uRight_Run.png")
+				{
+					player.Sprite.src = "IMAGES/uLeft.png"
+				}
+			}
+			else if (velocity == 39)
+			{
+				if(player.Sprite.src == rootContext + "IMAGES/uRight.png")
+				{	
+					player.Sprite.src = "IMAGES/uRight_Run.png";
+				}
+				else if (player.Sprite.src == rootContext + "IMAGES/uRight_Run.png")
+				{
+					player.Sprite.src = "IMAGES/uRight.png";
+				}
+				else if(player.Sprite.src == rootContext + "IMAGES/uLeft.png" || player.Sprite.src ==  rootContext + "IMAGES/uLeft_Run.png")
+				{
+					player.Sprite.src = "IMAGES/uRight.png";
+				}
+			}
+
+}
+//BINDS ONKEYUP
+
+
+// requestAnimationFrame polyfill by Erik Möller
+// fixes from Paul Irish and Tino Zijdel
+(function() {
+    var lastTime = 0;
+    var vendors = ['ms', 'moz', 'webkit', 'o'];
+    
+	for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+        window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] 
+                                   || window[vendors[x]+'CancelRequestAnimationFrame'];
+    }
+ 
+    if (!window.requestAnimationFrame)
+        window.requestAnimationFrame = function(callback, element) {
+            var currTime = new Date().getTime();
+            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            var id = window.setTimeout(function() { callback(currTime + timeToCall); }, 
+              timeToCall);
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+ 
+    if (!window.cancelAnimationFrame)
+        window.cancelAnimationFrame = function(id) {
+            clearTimeout(id);
+        };
+}());
+
+
+
+function draw()
+{
+
+	setTimeout(function() {
+		window.requestAnimationFrame(draw);
+
+	// Pre Logic Variable Adjustments
+	
+	for( var i = 0; i < maxBlock; i++) block[i].X -= player.Vel_X;
+	player.Y += player.Vel_Y;
+	
+	
+	// Logic 
+	if(isLeft) player.Vel_X = -3;
+	if(isRight) player.Vel_X = 3;
+	if(!isLeft && !isRight) player.Vel_X = 0;
+	
+	if(player.Vel_Y < player.Gravity) player.Vel_Y += player.Weight;
+for(var i = 0; i < maxBlock; i++)
+{
+	if(player.isColliding(block[i]) && player.Height < block[i].Y + player.Vel_Y) {	
+	   player.Y = block[i].Y - player.Height;
+	   player.Vel_Y = 0;
+	}
+}
+	if(isSpace && player.Vel_Y == 0) {
+		player.Vel_Y -= 5;
+		sndJump.play();
+	}
+	
+	// Post Logic Variable Adjustments
+	
+	// Start drawing here ________________________________
+	
+	// Testing to move char to the left!
+	//player.X += 1;
+	
+	grafx.clearRect(0,0,gameCanvas.width, gameCanvas.height);
+    grafx.drawImage(player.Sprite,player.X,player.Y);
+    for(var i = 0; i < maxBlock; i++) grafx.drawImage(block[i].Sprite,block[i].X,block[i].Y);
+	},interval);
+
+}
+
+function GameObject(img,x,y,width,height)
+{
+	this.Sprite = new Image();
+	this.Sprite.src = img;
+	this.X = x;
+	this.Y = y;
+	this.Height = height;
+	this.Width = width;
+	this.pre_X;
+	this.pre_Y;
+	this.Vel_X = 0;
+	this.Vel_Y = 0;
+	this.Gravity = 0;
+	this.Weight = 0;
+	
+	
+	this.isColliding = function(obj)
+	{
+		if(this.X > obj.X + obj.Width) return false;
+		if(this.X + this.Width < obj.X) return false;
+		if(this.Y > obj.Y + obj.Height)return false;
+		if(this.Y + this.Height < obj.Y) return false;
+		return true;
+	
+	}
+	
+}
+
+// Call Draw Function ____________________________________
+
+draw();
+
+</script>
+
+</body>
+

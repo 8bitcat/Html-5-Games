@@ -1,0 +1,5 @@
+Maximum requests in browser.
+Atlas to reduce loads.
+4000 tiles chopped up takes 4,5 seconds
+Atlas 1 image with everything packed take 234ms.
+
